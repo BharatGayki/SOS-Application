@@ -1,0 +1,181 @@
+
+<h2 class="sr-only">SOS AI Techno Solutions — Receipt Management System</h2>
+<link rel="stylesheet" href="css/style.css">
+<div class="app">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">SOS AI Techno Solutions — Receipt Manager</div>
+    <div class="topbar-sub">AI Academy · Batch Receipt Management</div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showSection('students')">Students</button>
+    <button class="nav-btn" onclick="showSection('receipts')">Receipts</button>
+    <button class="nav-btn" onclick="showSection('add-student')">+ Add Student</button>
+  </div>
+</div>
+
+<div id="sec-dashboard" class="section active">
+  <div class="stats" id="stats-grid"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Batch overview</span></div>
+      <div id="batch-overview"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Recent receipts</span></div>
+      <div id="recent-receipts"></div>
+    </div>
+  </div>
+</div>
+
+<div id="sec-students" class="section">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-head-title">All students</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="filter-batch" style="font-size:11px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff" onchange="renderStudents()">
+          <option value="">All batches</option>
+        </select>
+        <select id="filter-status" style="font-size:11px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff" onchange="renderStudents()">
+          <option value="">All status</option>
+          <option value="Paid">Paid</option>
+          <option value="Partial">Partial</option>
+          <option value="Due">Due</option>
+        </select>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search-student" placeholder="Search by name or mobile…" oninput="renderStudents()">
+      <button class="btn btn-primary btn-sm" onclick="showSection('add-student')">+ Add student</button>
+      <button class="btn btn-warn btn-sm" onclick="clearAllData()">🗑 Clear all demo data</button>
+      <span id="student-count" style="font-size:11px;color:var(--color-text-secondary);margin-left:auto"></span>
+    </div>
+    <div id="bulk-bar" class="bulk-bar" style="display:none">
+      <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)">
+      <span id="bulk-count">0 selected</span>
+      <button class="btn btn-danger btn-sm" onclick="deleteSelected()">Delete selected</button>
+      <button class="btn btn-sm" onclick="clearSelection()">Cancel</button>
+    </div>
+    <div style="overflow-x:auto">
+    <table id="students-table">
+      <thead><tr>
+        <th class="cb-col"><input type="checkbox" id="header-cb" onchange="toggleSelectAll(this.checked)"></th>
+        <th style="width:28px">#</th>
+        <th style="width:140px">Student</th>
+        <th style="width:80px">Batch</th>
+        <th style="width:90px">Course</th>
+        <th style="width:72px">Total fee</th>
+        <th style="width:72px">Paid</th>
+        <th style="width:72px">Balance</th>
+        <th style="width:60px">Status</th>
+        <th style="width:110px">Actions</th>
+      </tr></thead>
+      <tbody id="students-body"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<div id="sec-receipts" class="section">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-head-title">All receipts</span>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search-receipt" placeholder="Search student or receipt no…" oninput="renderReceiptsList()">
+      <select id="filter-receipt-batch" style="font-size:12px;padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)" onchange="renderReceiptsList()">
+        <option value="">All batches</option>
+      </select>
+      <span id="receipt-count" style="font-size:11px;color:var(--color-text-secondary);margin-left:auto"></span>
+    </div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th style="width:90px">Receipt no</th>
+        <th style="width:130px">Student</th>
+        <th style="width:70px">Batch</th>
+        <th style="width:90px">Course</th>
+        <th style="width:60px">Date</th>
+        <th style="width:75px">Amount</th>
+        <th style="width:75px">Advance</th>
+        <th style="width:65px">Balance</th>
+        <th style="width:60px">View</th>
+      </tr></thead>
+      <tbody id="receipts-body"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<div id="sec-add-student" class="section">
+  <div class="card">
+    <div class="card-head"><span class="card-head-title" id="form-title">Add new student</span></div>
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="switchFormTab(0,this)">Student info</button>
+      <button class="tab-pill" onclick="switchFormTab(1,this)">Receipt / fees</button>
+    </div>
+    <div id="form-tab-0">
+      <div class="form-grid">
+        <div class="form-group"><label>Full name *</label><input id="f-name" placeholder="e.g. Rahul Sharma"></div>
+        <div class="form-group"><label>Mobile number *</label><input id="f-mobile" placeholder="10-digit mobile"></div>
+        <div class="form-group"><label>Email</label><input id="f-email" placeholder="student@email.com"></div>
+        <div class="form-group"><label>Batch *</label>
+          <select id="f-batch">
+            <option value="">Select batch</option>
+            <option>Batch A</option><option>Batch B</option><option>Batch C</option><option>Batch D</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Course / Service *</label>
+          <select id="f-course">
+            <option value="">Select</option>
+            <option>Python Programming</option><option>Web Development</option><option>Data Science</option>
+            <option>Machine Learning</option><option>AI Fundamentals</option><option>Cybersecurity</option>
+            <option>Cloud Computing</option><option>Digital Marketing</option><option>Graphic Design</option><option>Spoken English</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Duration (days)</label><input id="f-duration" type="number" placeholder="e.g. 90"></div>
+        <div class="form-group"><label>Join date</label><input id="f-joindate" type="date"></div>
+        <div class="form-group"><label>Payment mode</label>
+          <select id="f-paymode">
+            <option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="showSection('students')">Cancel</button>
+        <button class="btn btn-primary" onclick="switchFormTab(1,document.querySelectorAll('.tab-pill')[1])">Next: Fees →</button>
+      </div>
+    </div>
+    <div id="form-tab-1" style="display:none">
+      <div class="form-grid">
+        <div class="form-group"><label>Total course fee (₹)</label><input id="f-fee" type="number" placeholder="0.00" oninput="calcFeePreview()"></div>
+        <div class="form-group"><label>Advance paid (₹)</label><input id="f-advance" type="number" placeholder="0.00" oninput="calcFeePreview()"></div>
+        <div class="form-group"><label>Service charges (₹)</label><input id="f-service" type="number" placeholder="0.00" oninput="calcFeePreview()"></div>
+        <div class="form-group"><label>Other charges (₹)</label><input id="f-other" type="number" placeholder="0.00" oninput="calcFeePreview()"></div>
+        <div class="form-group span2" style="background:var(--color-background-secondary);padding:10px;border-radius:var(--border-radius-md)">
+          <label>Fee preview</label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px" id="fee-preview"></div>
+        </div>
+        <div class="form-group span2"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Any additional notes…" style="resize:vertical"></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="switchFormTab(0,document.querySelectorAll('.tab-pill')[0])">← Back</button>
+        <button class="btn" onclick="showSection('students')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveStudent()">Save & generate receipt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sec-receipt-view" class="section">
+  <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+    <button class="btn btn-sm" onclick="showSection('receipts')">← Back</button>
+    <span style="font-size:13px;font-weight:500;color:var(--color-text-primary)" id="rv-title"></span>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="window.print()">Print / PDF</button>
+  </div>
+  <div class="card receipt-view" id="receipt-print-area"></div>
+</div>
+</div>
+
+<script src="js/app.js"></script>
