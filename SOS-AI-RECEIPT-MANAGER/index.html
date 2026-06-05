@@ -1,3 +1,8 @@
+<script>
+if(localStorage.getItem("isLoggedIn") !== "true"){
+    window.location.href = "login/login.html";
+}
+</script>
 # hello guyz
 <h2 class="sr-only">SOS AI Techno Solutions — Receipt Management System</h2>
 <link rel="stylesheet" href="css/style.css">
@@ -8,6 +13,7 @@
     <div class="topbar-sub">AI Academy · Batch Receipt Management</div>
   </div>
   <div class="nav">
+    <button class="nav-btn" onclick="logout()">Logout</button>
     <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
     <button class="nav-btn" onclick="showSection('students')">Students</button>
     <button class="nav-btn" onclick="showSection('receipts')">Receipts</button>

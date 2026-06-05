@@ -319,3 +319,7 @@ function viewReceipt(rid){
 }
 
 loadFromSheet();
+function logout(){
+    localStorage.removeItem("isLoggedIn");
+    window.location.href = "login/login.html";
+}
