@@ -1,5 +1,5 @@
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyOvDOerVr5kGC6mGluVBvcNxseJxM6drkzBgGmerVKeXobojkvoGqfwCd0I_kI5G18/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzMEJj9COkkPHPsc_J1nvzEMe3eXQDj0FeiHeIok5PXSNMnEnhp9TDIRSqMH5rleaBG/exec';
 let students=[], receipts=[], editingId=null, receiptCounter=1001, selectedIds=new Set();
 
 async function loadFromSheet() {
