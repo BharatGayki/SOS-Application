@@ -1,6 +1,30 @@
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbzMEJj9COkkPHPsc_J1nvzEMe3eXQDj0FeiHeIok5PXSNMnEnhp9TDIRSqMH5rleaBG/exec';
-let students=[], receipts=[], editingId=null, receiptCounter=1001, selectedIds=new Set();
+const REVENUE_API ='https://script.google.com/macros/s/AKfycbzo7puRX6scksL5-tr4oh5LHsVSOTnalOtL4zcQ2vTdCKC7pBG33-h1x04g40HDnvdPqQ/exec';
+
+async function loadRevenueData() {
+
+  const res = await fetch(
+    'https://script.google.com/macros/s/AKfycbzo7puRX6scksL5-tr4oh5LHsVSOTnalOtL4zcQ2vTdCKC7pBG33-h1x04g40HDnvdPqQ/exec?sheet=RevenueTracker'
+  );
+
+  const json = await res.json();
+
+  alert(JSON.stringify(json));
+
+  return json.data || [];
+}
+
+
+let revenueTargets = [
+  { batch:'A', target:50000 },
+  { batch:'B', target:40000 },
+  { batch:'C', target:60000 },
+  { batch:'D', target:30000 }
+];
+let editingId = null;
+let receiptCounter = 1001;
+let selectedIds = new Set();
 
 async function loadFromSheet() {
   try {
@@ -138,10 +162,11 @@ function showSection(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
-  const map={'dashboard':0,'students':1,'receipts':2,'add-student':3};
+  const map={'dashboard':0,'revenue' :1,'students':2,'receipts':3,'add-student':4};
   const idx=map[id];
   if(idx!==undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
   if(id==='dashboard') renderDashboard();
+  if(id==='revenue') renderRevenue();
   if(id==='students'){initBatchFilters();renderStudents();}
   if(id==='receipts'){initBatchFilters();renderReceiptsList();}
   if(id==='add-student'){editingId=null;clearForm();}
@@ -318,8 +343,95 @@ function viewReceipt(rid){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
 }
 
-loadFromSheet();
-function logout(){
-    localStorage.removeItem("isLoggedIn");
-    window.location.href = "login/login.html";
+
+  async function renderRevenue(){
+
+  const revenue = await loadRevenueData();
+
+  if(revenue.length === 0){
+    document.getElementById('revenue-table').innerHTML =
+      '<div style="padding:20px">No Revenue Data Found</div>';
+    return;
+  }
+
+  let html = `
+  <table>
+    <thead>
+      <tr>
+        <th>Batch Timing</th>
+        <th>Batch Name</th>
+        <th>January Target</th>
+        <th>January Achieved</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  revenue.forEach(r => {
+    html += `
+      <tr>
+        <td>${r["Batch Timing"] || ""}</td>
+        <td>${r["Batch Name"] || ""}</td>
+        <td>${r["January Target"] || 0}</td>
+        <td>${r["January Achieved"] || 0}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+    </tbody>
+  </table>
+  `;
+
+  document.getElementById('revenue-table').innerHTML = html;
 }
+
+function renderRevenue(){
+
+  let html = `
+    <table border="1" width="100%">
+      <tr>
+        <th>Batch</th>
+        <th>Target</th>
+        <th>Achieved</th>
+        <th>Remaining</th>
+      </tr>
+  `;
+
+  revenueTargets.forEach(r => {
+
+    const achieved = students
+      .filter(s => s.batch === r.batch)
+      .reduce((sum,s)=>sum + Number(s.advance || 0),0);
+
+    const remaining = Number(r.target || 0) - achieved;
+
+    html += `
+      <tr>
+        <td>${r.batch}</td>
+        <td>₹${r.target}</td>
+        <td>₹${achieved}</td>
+        <td>₹${remaining}</td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+
+  document.getElementById("revenue-table").innerHTML = html;
+}
+
+function updateRevenueTiming(){
+
+  const batch = document.getElementById('rev-batch').value;
+
+  const student = students.find(
+    s => String(s.batch || '').trim() === batch
+  );
+
+  document.getElementById('rev-timing').value =
+    student ? (student.timing || '') : '';
+
+}
+
+loadFromSheet();

@@ -1,20 +1,15 @@
-<script>
-if(localStorage.getItem("isLoggedIn") !== "true"){
-    window.location.href = "login/login.html";
-}
-</script>
-# hello guyz
+
 <h2 class="sr-only">SOS AI Techno Solutions — Receipt Management System</h2>
 <link rel="stylesheet" href="css/style.css">
 <div class="app">
 <div class="topbar">
-  <!-- <div> #hi friends -->
+  <div>
     <div class="topbar-title">SOS AI Techno Solutions — Receipt Manager</div>
     <div class="topbar-sub">AI Academy · Batch Receipt Management</div>
   </div>
   <div class="nav">
-    <button class="nav-btn" onclick="logout()">Logout</button>
     <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showSection('revenue')">Revenue Tracker</button>
     <button class="nav-btn" onclick="showSection('students')">Students</button>
     <button class="nav-btn" onclick="showSection('receipts')">Receipts</button>
     <button class="nav-btn" onclick="showSection('add-student')">+ Add Student</button>
@@ -28,11 +23,75 @@ if(localStorage.getItem("isLoggedIn") !== "true"){
       <div class="card-head"><span class="card-head-title">Batch overview</span></div>
       <div id="batch-overview"></div>
     </div>
+
     <div class="card">
       <div class="card-head"><span class="card-head-title">Recent receipts</span></div>
       <div id="recent-receipts"></div>
     </div>
   </div>
+</div>
+
+<div id="sec-revenue" class="section">
+
+  <div class="stats" id="revenue-stats"></div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title">Add Revenue Target</span>
+  </div>
+
+  <div style="padding:15px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;">
+
+    <select id="rev-batch" onchange="updateRevenueTiming()">
+      <option value="">Select Batch</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+    </select>
+
+    <input
+      type="text"
+      id="rev-timing"
+      placeholder="Batch Timing"
+    >
+
+    <select id="rev-month">
+      <option>January</option>
+      <option>February</option>
+      <option>March</option>
+      <option>April</option>
+      <option>May</option>
+      <option>June</option>
+      <option>July</option>
+      <option>August</option>
+      <option>September</option>
+      <option>October</option>
+      <option>November</option>
+      <option>December</option>
+    </select>
+
+    <input
+      type="number"
+      id="rev-target"
+      placeholder="Target Amount"
+    >
+
+    <button onclick="saveRevenueTarget()">
+      Save
+    </button>
+
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title">Revenue Summary</span>
+  </div>
+
+  <div id="revenue-table" style="padding:10px;"></div>
+</div>
+
 </div>
 
 <div id="sec-students" class="section">
