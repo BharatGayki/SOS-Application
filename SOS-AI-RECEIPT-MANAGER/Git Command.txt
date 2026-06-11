@@ -1,0 +1,6 @@
+git switch -c <branch name>
+git clone https://github.com/BharatGayki/SOS-Application.git
+git status
+git add .
+git commit -m"new commit"
+git push
