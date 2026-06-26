@@ -16,12 +16,8 @@ async function loadRevenueData() {
 }
 
 
-let revenueTargets = [
-  { batch:'A', target:50000 },
-  { batch:'B', target:40000 },
-  { batch:'C', target:60000 },
-  { batch:'D', target:30000 }
-];
+let revenueTargets = [];
+
 let editingId = null;
 let receiptCounter = 1001;
 let selectedIds = new Set();
@@ -392,6 +388,7 @@ function renderRevenue(){
     <table border="1" width="100%">
       <tr>
         <th>Batch</th>
+        <th>Month</th>
         <th>Target</th>
         <th>Achieved</th>
         <th>Remaining</th>
@@ -400,15 +397,35 @@ function renderRevenue(){
 
   revenueTargets.forEach(r => {
 
-    const achieved = students
-      .filter(s => s.batch === r.batch)
-      .reduce((sum,s)=>sum + Number(s.advance || 0),0);
+    const batchStudents = students.filter(s => {
+
+ const studentMonth =
+   new Date(s.startDate).toLocaleString(
+      'default',
+      { month:'long' }
+   );
+
+ return (
+   String(s.batch).trim() === String(r.batch).trim() &&
+   studentMonth === r.month
+ );
+
+});
+
+console.log("Revenue Batch:", r.batch);
+console.log("Students Found:", batchStudents);
+
+const achieved = batchStudents.reduce(
+  (sum,s)=>sum + Number(s.advance || 0),
+  0
+);
 
     const remaining = Number(r.target || 0) - achieved;
 
     html += `
       <tr>
         <td>${r.batch}</td>
+        <td>${r.month}</td>
         <td>₹${r.target}</td>
         <td>₹${achieved}</td>
         <td>₹${remaining}</td>
@@ -421,17 +438,28 @@ function renderRevenue(){
   document.getElementById("revenue-table").innerHTML = html;
 }
 
-function updateRevenueTiming(){
+function saveRevenueTarget(){
 
   const batch = document.getElementById('rev-batch').value;
+  const timing = document.getElementById('rev-timing').value;
+  const month = document.getElementById('rev-month').value;
+  const target = Number(document.getElementById('rev-target').value);
 
-  const student = students.find(
-    s => String(s.batch || '').trim() === batch
-  );
+  if(!batch || !month || !target){
+    alert('Please fill all fields');
+    return;
+  }
 
-  document.getElementById('rev-timing').value =
-    student ? (student.timing || '') : '';
+  revenueTargets.push({
+    batch,
+    timing,
+    month,
+    target
+  });
 
+  renderRevenue();
+
+  document.getElementById('rev-target').value = '';
 }
 
 loadFromSheet();

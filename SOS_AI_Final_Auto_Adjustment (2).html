@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOS AI Techno Solutions — Receipt Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+/* ── CSS Variables ── */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f8fafc;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-border: #e2e8f0;
+  --color-border-secondary: #cbd5e1;
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-warn: #d97706;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f1f5f9;
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Top Bar ── */
+.topbar {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-title { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+.topbar-sub   { font-size: 11px; opacity: .75; margin-top: 2px; }
+
+.nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background .15s;
+}
+.nav-btn:hover, .nav-btn.active {
+  background: rgba(255,255,255,.35);
+  border-color: rgba(255,255,255,.5);
+}
+
+.section { display: none; padding: 16px; }
+.section.active { display: block; }
+
+.card {
+  background: var(--color-background-primary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.card-head {
+  background: linear-gradient(90deg, #1e3a5f, #2563eb);
+  color: #fff;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-head-title { font-size: 13px; font-weight: 600; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stat-card {
+  background: var(--color-background-primary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat-label { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+.stat-value { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--color-text-primary); }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--color-background-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.toolbar input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  font-size: 12px;
+  background: #fff;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--color-border); }
+th {
+  background: var(--color-background-secondary);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+.cb-col { width: 32px; text-align: center; }
+
+.bulk-bar {
+  padding: 8px 14px;
+  background: #dbeafe;
+  border-bottom: 1px solid #93c5fd;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn:hover { background: #f1f5f9; }
+.btn-primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-danger  { background: var(--color-danger);  color: #fff; border-color: var(--color-danger); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-warn    { background: var(--color-warn);    color: #fff; border-color: var(--color-warn); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+.rev-form-row {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+.rev-form-row select,
+.rev-form-row input {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  font-size: 13px;
+  background: #fff;
+  color: var(--color-text-primary);
+  width: 100%;
+}
+.rev-form-row select:focus,
+.rev-form-row input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.rev-save-btn {
+  padding: 8px 18px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rev-save-btn:hover { background: var(--color-primary-hover); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 16px;
+}
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.span2 { grid-column: span 2; }
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  font-size: 13px;
+  background: #fff;
+  color: var(--color-text-primary);
+  transition: border-color .15s;
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.form-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-border);
+  justify-content: flex-end;
+}
+
+.tab-pills {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-secondary);
+}
+.tab-pill {
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border-secondary);
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+.tab-pill.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal.show { display: flex; }
+.modal-content {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.modal-header {
+  background: linear-gradient(90deg, #1e3a5f, #2563eb);
+  color: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h2 { font-size: 16px; margin: 0; }
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+}
+.modal-body { padding: 20px; }
+
+@media print {
+  /* Hide the whole UI, then reveal ONLY the receipt — prints exactly like the PDF download */
+  body * { visibility: hidden !important; }
+  #receipt-print-area, #receipt-print-area * { visibility: visible !important; }
+  #receipt-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .rev-form-row { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.span2 { grid-column: span 1; }
+  .stats { grid-template-columns: 1fr 1fr; }
+}
+
+.batch-link { cursor: pointer; color: var(--color-primary); text-decoration: underline; font-weight: 600; }
+.batch-link:hover { text-decoration: none; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.receipt-area { 
+  max-width: 600px; 
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+}
+
+/* Adjustment display styles */
+.adjustment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.adjustment-label {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.adjustment-positive {
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.adjustment-negative {
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.adjustment-value {
+  font-size: 11px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">SOS AI Techno Solutions — Receipt Manager</div>
+    <div class="topbar-sub">AI Academy · Batch Receipt Management</div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showSection('revenue')">Revenue Tracker</button>
+    <button class="nav-btn" onclick="showSection('targets')">Targets</button>
+    <button class="nav-btn" onclick="showSection('students')">Students</button>
+    <button class="nav-btn" onclick="showSection('add-student')">+ Add Student</button>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="sec-dashboard" class="section active">
+  <div class="stats" id="stats-grid"></div>
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Batch Overview</span></div>
+      <div style="padding:14px;font-size:12px" id="batch-overview">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Summary</span></div>
+      <div style="padding:14px;font-size:12px" id="dashboard-summary">Loading...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Recent Receipts</span></div>
+    <div style="padding:10px" id="recent-receipts">Loading...</div>
+  </div>
+</div>
+
+<!-- ── REVENUE TRACKER (ANALYTICS ONLY) ── -->
+<div id="sec-revenue" class="section">
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Revenue Tracker - Analytics</span></div>
+    
+    <!-- Filters -->
+    <div style="padding:15px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;background:var(--color-background-secondary);border-bottom:1px solid var(--color-border)">
+      <div>
+        <label style="font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Batch</label>
+        <select id="rev-filter-batch" onchange="updateRevenueAnalytics()" style="width:100%;padding:8px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:white">
+          <option value="">All Batches</option>
+          <option value="Batch A">Batch A</option>
+          <option value="Batch B">Batch B</option>
+          <option value="Batch C">Batch C</option>
+          <option value="Batch D">Batch D</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Month</label>
+        <select id="rev-filter-month" onchange="updateRevenueAnalytics()" style="width:100%;padding:8px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:white">
+          <option value="">All Months</option>
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September">September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Year</label>
+        <select id="rev-filter-year" onchange="updateRevenueAnalytics()" style="width:100%;padding:8px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:white">
+          <option value="">All Years</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="updateRevenueAnalytics()">Apply Filters</button>
+    </div>
+
+    <div id="revenue-analytics-display" style="padding:14px"></div>
+  </div>
+</div>
+
+<!-- ── TARGETS ── -->
+<div id="sec-targets" class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <!-- STUDENT TARGET -->
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Student Target</span></div>
+      <div class="rev-form-row" style="grid-template-columns:1fr 1fr 1fr auto auto;padding:12px;gap:8px">
+        <select id="std-batch">
+          <option value="">Select Batch</option>
+          <option value="Batch A">Batch A</option>
+          <option value="Batch B">Batch B</option>
+          <option value="Batch C">Batch C</option>
+          <option value="Batch D">Batch D</option>
+        </select>
+        <select id="std-month">
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+        <input type="number" id="std-target" placeholder="Target Students">
+        <button class="rev-save-btn" onclick="saveStudentTarget()" style="width:auto;padding:8px 12px">Save</button>
+        <button class="btn btn-sm" onclick="clearStudentTargetInput()" style="width:auto">Clear</button>
+      </div>
+      <div style="padding:10px;max-height:300px;overflow-y:auto" id="student-targets-list"></div>
+    </div>
+
+    <!-- REVENUE TARGET -->
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Revenue Target</span></div>
+      <div class="rev-form-row" style="grid-template-columns:1fr 1fr 1fr auto auto;padding:12px;gap:8px">
+        <select id="rev-batch2">
+          <option value="">Select Batch</option>
+          <option value="Batch A">Batch A</option>
+          <option value="Batch B">Batch B</option>
+          <option value="Batch C">Batch C</option>
+          <option value="Batch D">Batch D</option>
+        </select>
+        <select id="rev-month2">
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+        <input type="number" id="rev-target2" placeholder="Target Amount (₹)">
+        <button class="rev-save-btn" onclick="saveRevenueTarget()" style="width:auto;padding:8px 12px">Save</button>
+        <button class="btn btn-sm" onclick="clearRevenueTargetInput()" style="width:auto">Clear</button>
+      </div>
+      <div style="padding:10px;max-height:300px;overflow-y:auto" id="revenue-targets-list"></div>
+    </div>
+  </div>
+
+  <!-- MONTHLY SUMMARY WITH AUTOMATIC ADJUSTMENTS -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-head"><span class="card-head-title">Monthly Summary (Auto-Adjusted Targets)</span></div>
+    <div style="padding:14px;overflow-x:auto">
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--color-text-secondary);margin-right:10px">Filter:</label>
+        <select id="summary-batch" onchange="updateMonthlySummary()" style="padding:6px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:white">
+          <option value="">All Batches</option>
+          <option value="Batch A">Batch A</option>
+          <option value="Batch B">Batch B</option>
+          <option value="Batch C">Batch C</option>
+          <option value="Batch D">Batch D</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th style="text-align:right">Student Target</th>
+            <th style="text-align:right">Achieved</th>
+            <th style="text-align:right">Remaining</th>
+            <th style="text-align:right">Revenue Target</th>
+            <th style="text-align:right">Achieved</th>
+            <th style="text-align:right">Remaining</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-summary-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── STUDENTS ── -->
+<div id="sec-students" class="section">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-head-title">All Students</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="filter-batch" style="font-size:11px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff" onchange="renderStudents()">
+          <option value="">All batches</option>
+        </select>
+        <select id="filter-status" style="font-size:11px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff" onchange="renderStudents()">
+          <option value="">All status</option>
+          <option value="Paid">Paid</option>
+          <option value="Partial">Partial</option>
+          <option value="Due">Due</option>
+        </select>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search-student" placeholder="Search by name or mobile…" oninput="renderStudents()">
+      <button class="btn btn-primary btn-sm" onclick="showSection('add-student')">+ Add Student</button>
+      <button class="btn btn-warn btn-sm" onclick="clearAllData()">🗑 Clear All Data</button>
+      <span id="student-count" style="font-size:11px;color:var(--color-text-secondary);margin-left:auto"></span>
+    </div>
+    <div id="bulk-bar" class="bulk-bar" style="display:none">
+      <input type="checkbox" id="header-cb" onchange="toggleSelectAll(this.checked)">
+      <span id="bulk-count">0 selected</span>
+      <button class="btn btn-sm" onclick="clearSelection()" style="margin-left:auto">Clear Selection</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSelected()">🗑 Delete Selected</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:32px"><input type="checkbox" id="header-cb" onchange="toggleSelectAll(this.checked)"></th>
+            <th style="width:40px">#</th>
+            <th>Name</th>
+            <th>Batch</th>
+            <th>Course</th>
+            <th style="text-align:right">Fee</th>
+            <th style="text-align:right">Advance</th>
+            <th style="text-align:right">Balance</th>
+            <th style="width:70px">Status</th>
+            <th style="width:180px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="students-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD STUDENT (SEQUENTIAL WORKFLOW) ── -->
+<div id="sec-add-student" class="section">
+  <div class="card">
+    <div class="card-head"><span class="card-head-title" id="form-title">Add New Student</span></div>
+    <div class="tab-pills">
+      <button class="tab-pill active" id="tab-info" onclick="switchFormTab(0,this)">1. Information</button>
+      <button class="tab-pill" id="tab-receipt" onclick="switchFormTab(1,this)" disabled style="opacity:0.5">2. Receipt Details</button>
+    </div>
+
+    <!-- Tab 0: Student Information -->
+    <div id="form-tab-0" class="tab-content active form-grid">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="f-name" required onchange="checkInfoComplete()">
+      </div>
+      <div class="form-group">
+        <label>Mobile *</label>
+        <input type="text" id="f-mobile" placeholder="10 digits" maxlength="10" onchange="checkInfoComplete()">
+      </div>
+      <div class="form-group span2">
+        <label>Email</label>
+        <input type="email" id="f-email" onchange="checkInfoComplete()">
+      </div>
+      <div class="form-group">
+        <label>Batch *</label>
+        <select id="f-batch" onchange="updateStudentTiming(); checkInfoComplete()" required>
+          <option value="">Select Batch</option>
+          <option value="Batch A">Batch A</option>
+          <option value="Batch B">Batch B</option>
+          <option value="Batch C">Batch C</option>
+          <option value="Batch D">Batch D</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Timing / Slot *</label>
+        <select id="f-timing" required onchange="checkInfoComplete()">
+          <option value="">Select Batch First</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Course *</label>
+        <select id="f-course" required onchange="checkInfoComplete()">
+          <option value="">Select Course</option>
+          <option value="Python Basics">Python Basics</option>
+          <option value="Web Development">Web Development</option>
+          <option value="Data Science">Data Science</option>
+          <option value="Mobile App">Mobile App</option>
+          <option value="Cloud Computing">Cloud Computing</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Join Date *</label>
+        <input type="date" id="f-joindate" required onchange="checkInfoComplete()">
+      </div>
+      <div class="form-group">
+        <label>Duration *</label>
+        <select id="f-duration" required onchange="handleDurationChange(); checkInfoComplete()">
+          <option value="">Select Duration</option>
+          <option value="1 Month">1 Month</option>
+          <option value="3 Months">3 Months</option>
+          <option value="6 Months">6 Months</option>
+          <option value="1 Year">1 Year</option>
+          <option value="custom">Custom Duration</option>
+        </select>
+      </div>
+      <div class="form-group span2" id="custom-duration-group" style="display:none">
+        <label>Enter Custom Duration</label>
+        <input type="text" id="f-custom-duration" placeholder="e.g., 45 days" onchange="checkInfoComplete()">
+      </div>
+      <div class="form-group span2">
+        <label>Notes</label>
+        <textarea id="f-notes" rows="2"></textarea>
+      </div>
+      <div class="form-actions" style="grid-column:span 2">
+        <button class="btn btn-secondary" onclick="showSection('students')">Cancel</button>
+        <button class="btn btn-primary" id="btn-next-receipt" onclick="switchFormTab(1, document.getElementById('tab-receipt'))" disabled>Next: Receipt Info →</button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Receipt Details -->
+    <div id="form-tab-1" class="tab-content form-grid">
+      <div class="form-group">
+        <label>Total Charges (₹) *</label>
+        <input type="number" id="f-fee" oninput="calcFeePreview()" required>
+      </div>
+      <div class="form-group">
+        <label>Advance Paid (₹)</label>
+        <input type="number" id="f-advance" oninput="calcFeePreview()">
+      </div>
+      <div class="form-group">
+        <label>Service Charges (₹)</label>
+        <input type="number" id="f-service" oninput="calcFeePreview()">
+      </div>
+      <div class="form-group">
+        <label>Other Charges (₹)</label>
+        <input type="number" id="f-other" oninput="calcFeePreview()">
+      </div>
+      <div class="form-group span2">
+        <label>Payment Mode *</label>
+        <select id="f-paymode" required>
+          <option value="">Select Payment Mode</option>
+          <option value="Cash">Cash</option>
+          <option value="Card">Card</option>
+          <option value="UPI">UPI</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Check">Check</option>
+        </select>
+      </div>
+      <div class="form-group span2" id="fee-preview"></div>
+      <div class="form-actions" style="grid-column:span 2">
+        <button class="btn btn-secondary" onclick="switchFormTab(0, document.getElementById('tab-info'))">← Back</button>
+        <button class="btn btn-primary" onclick="saveStudent()">Save & Generate Receipt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECEIPT VIEW ── -->
+<div id="sec-receipt-view" class="section">
+  <div style="margin-bottom:14px">
+    <button class="btn btn-primary" onclick="downloadReceiptPDF()">📥 Download PDF</button>
+    <button class="btn" onclick="window.print()">🖨 Print</button>
+    <button class="btn" onclick="showSection('students')">← Back</button>
+  </div>
+  <div id="rv-title" class="card-head" style="margin-bottom:14px">Receipt View</div>
+  <div id="receipt-print-area" class="receipt-area"></div>
+</div>
+
+</div>
+
+<!-- ── BATCH MODAL ── -->
+<div id="batchModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="batchModalTitle">Batch Details</h2>
+      <button class="modal-close" onclick="closeBatchModal()">×</button>
+    </div>
+    <div class="modal-body" id="batchModalBody">
+    </div>
+  </div>
+</div>
+
+<script>
+// ── BATCH TIMINGS WITH CUSTOM OPTION ──
+const BATCH_TIMINGS = {
+  'Batch A': ['08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', 'Custom Timing'],
+  'Batch B': ['11:00 - 12:00', '12:00 - 13:00', '13:00 - 14:00', 'Custom Timing'],
+  'Batch C': ['16:00 - 17:00', '17:00 - 18:00', '18:00 - 19:00', 'Custom Timing'],
+  'Batch D': ['19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00', 'Custom Timing']
+};
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ── STORAGE ─────────────────────────────────
+function getStudents()       { return JSON.parse(localStorage.getItem('sos_students') || '[]'); }
+function saveStudents(arr)   { localStorage.setItem('sos_students', JSON.stringify(arr)); }
+function getRevTargets()     { return JSON.parse(localStorage.getItem('sos_rev_targets') || '[]'); }
+function saveRevTargets(arr) { localStorage.setItem('sos_rev_targets', JSON.stringify(arr)); }
+function getStdTargets()     { return JSON.parse(localStorage.getItem('sos_std_targets') || '[]'); }
+function saveStdTargets(arr) { localStorage.setItem('sos_std_targets', JSON.stringify(arr)); }
+function getReceipts()       { return JSON.parse(localStorage.getItem('sos_receipts') || '[]'); }
+function saveReceipts(arr)   { localStorage.setItem('sos_receipts', JSON.stringify(arr)); }
+
+// ── GOOGLE SHEETS SYNC (non-blocking — localStorage stays the source of truth) ──
+// Paste your deployed Web App URLs here:
+const STUDENT_SHEET_URL = "https://script.google.com/macros/s/AKfycbz9kyO77YaRIVBhBPDMyOnSiSn5Iclv419WltogjTixk6i2k2efrPYzh8lECKQVcHSy/exec";   // Sheet 1 — student information
+const REVENUE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxJhhd5a8q-Aq_4euqiUXGmcKxgg0j2VBOdc1FqOOx05RuxLsAooBvY0NRC-hpqQmYpog/execL";   // Sheet 2 — revenue tracker
+
+// Fire-and-forget POST. Never blocks the UI, never breaks the app if offline/unconfigured.
+function syncToSheet(url, payload) {
+  if (!url || url.indexOf('PASTE_') === 0) return;   // not configured yet → app works on localStorage only
+  try {
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight
+      body: JSON.stringify(payload)
+    }).catch(function () { /* ignore network errors — local data already saved */ });
+  } catch (e) { /* ignore */ }
+}
+
+// ── HELPERS ──────────────────────────────────
+function fmt(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function genStudentId() {
+  const now = new Date();
+  const d = pad(now.getDate());
+  const m = pad(now.getMonth() + 1);
+  const y = String(now.getFullYear());
+  const h = pad(now.getHours());
+  const min = pad(now.getMinutes());
+  const s = pad(now.getSeconds());
+  return d + m + y + h + min + s;
+}
+
+function joinMonth(student) {
+  const d = new Date(student.joindate);
+  return MONTHS[d.getMonth()];
+}
+
+function genReceiptNo() {
+  return 'RCP-' + pad(getReceipts().length + 1);
+}
+
+function getMonthIndex(month) {
+  return MONTHS.indexOf(month);
+}
+
+function getPreviousMonth(month) {
+  const idx = getMonthIndex(month);
+  return idx > 0 ? MONTHS[idx - 1] : null;
+}
+
+// ── AUTOMATIC TARGET ADJUSTMENT LOGIC ──────────
+function calculateAdjustedStudentTarget(batch, month) {
+  const stdTargets = getStdTargets();
+  const baseTarget = stdTargets.find(t => t.batch === batch && t.month === month)?.target || 0;
+  
+  const prevMonth = getPreviousMonth(month);
+  if (!prevMonth) return { target: baseTarget, adjustment: 0 };
+  
+  const prevTarget = stdTargets.find(t => t.batch === batch && t.month === prevMonth)?.target || 0;
+  const prevAchieved = getStudents().filter(s => s.batch === batch && joinMonth(s) === prevMonth).length;
+  
+  const adjustment = prevAchieved - prevTarget;
+  const adjustedTarget = Math.max(0, baseTarget - adjustment);
+  
+  return { target: adjustedTarget, adjustment: adjustment, baseTarget: baseTarget };
+}
+
+function calculateAdjustedRevenueTarget(batch, month) {
+  const revTargets = getRevTargets().filter(t => !t.timing);
+  const baseTarget = revTargets.find(t => t.batch === batch && t.month === month)?.target || 0;
+  
+  const prevMonth = getPreviousMonth(month);
+  if (!prevMonth) return { target: baseTarget, adjustment: 0 };
+  
+  const prevTarget = revTargets.find(t => t.batch === batch && t.month === prevMonth)?.target || 0;
+  const prevAchieved = getStudents().filter(s => s.batch === batch && joinMonth(s) === prevMonth).reduce((sum, s) => sum + Number(s.advance || 0), 0);
+  
+  const adjustment = prevAchieved - prevTarget;
+  const adjustedTarget = Math.max(0, baseTarget - adjustment);
+  
+  return { target: adjustedTarget, adjustment: adjustment, baseTarget: baseTarget };
+}
+
+// ── NAVIGATION ────────────────────────────────
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  if (event && event.target && event.target.classList.contains('nav-btn')) event.target.classList.add('active');
+  
+  if (id === 'dashboard')   renderDashboard();
+  if (id === 'revenue')     updateRevenueAnalytics();
+  if (id === 'targets')     { renderStudentTargets(); renderRevenueTargets(); updateMonthlySummary(); }
+  if (id === 'students')    renderStudents();
+  if (id === 'add-student') initAddStudentForm();
+}
+
+// ── DASHBOARD ──────────────────────────────────
+function renderDashboard() {
+  const students = getStudents();
+  const receipts = getReceipts();
+  const stdTargets = getStdTargets();
+  const revTargets = getRevTargets();
+  
+  const totalFee = students.reduce((sum, s) => sum + Number(s.fee || 0), 0);
+  const totalAdvance = students.reduce((sum, s) => sum + Number(s.advance || 0), 0);
+  const totalBal = totalFee - totalAdvance;
+  
+  const revTarget = revTargets.reduce((sum, t) => sum + Number(t.target || 0), 0);
+  
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value">${students.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Fee</div>
+      <div class="stat-value">${fmt(totalFee)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Advance Collected</div>
+      <div class="stat-value" style="color:var(--color-success)">${fmt(totalAdvance)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Balance Due</div>
+      <div class="stat-value" style="color:var(--color-danger)">${fmt(totalBal)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Revenue Target</div>
+      <div class="stat-value">${fmt(revTarget)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Receipts</div>
+      <div class="stat-value">${receipts.length}</div>
+    </div>
+  `;
+  
+  const batches = [...new Set(students.map(s => s.batch))].filter(Boolean);
+  const batchHTML = batches.length > 0
+    ? batches.map(b => {
+        const batchStudents = students.filter(s => s.batch === b);
+        return `<div style="margin-bottom:8px">
+          <strong style="cursor:pointer;color:var(--color-primary)" onclick="openBatchModal('${b}')">${b}</strong> (${batchStudents.length} students)
+        </div>`;
+      }).join('')
+    : '<p style="color:#888">No batches yet</p>';
+  
+  document.getElementById('batch-overview').innerHTML = batchHTML;
+  
+  const stdAch = students.length;
+  const revAch = totalAdvance;
+  const stdTarget = stdTargets.reduce((s, t) => s + Number(t.target || 0), 0);
+  const revTargetVal = revTargets.reduce((s, t) => s + Number(t.target || 0), 0);
+  
+  const stdPct = stdTarget > 0 ? Math.round(stdAch / stdTarget * 100) : 0;
+  const revPct = revTargetVal > 0 ? Math.round(revAch / revTargetVal * 100) : 0;
+  
+  document.getElementById('dashboard-summary').innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Students: ${stdAch}/${stdTarget} (${stdPct}%)</div>
+      <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+        <div style="height:100%;background:var(--color-success);width:${Math.min(100,stdPct)}%"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Revenue: ${fmt(revAch)}/${fmt(revTargetVal)} (${revPct}%)</div>
+      <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+        <div style="height:100%;background:var(--color-success);width:${Math.min(100,revPct)}%"></div>
+      </div>
+    </div>
+  `;
+  
+  const latestReceipts = receipts.slice(-5).reverse();
+  const receiptsHTML = latestReceipts.length > 0
+    ? '<table style="font-size:11px;width:100%"><tr><th>Receipt</th><th>Student</th><th style="text-align:right">Amount</th></tr>' +
+      latestReceipts.map(r => `<tr><td>${r.receiptNo}</td><td>${r.studentName}</td><td style="text-align:right;color:var(--color-success)">${fmt(r.advance)}</td></tr>`).join('') +
+      '</table>'
+    : '<p style="color:#888;padding:10px;text-align:center;font-size:11px">No receipts yet</p>';
+  
+  document.getElementById('recent-receipts').innerHTML = receiptsHTML;
+}
+
+// ── REVENUE TRACKER (ANALYTICS ONLY) ────────────
+function updateRevenueAnalytics() {
+  const batch = document.getElementById('rev-filter-batch').value || '';
+  const month = document.getElementById('rev-filter-month').value || '';
+  const year = document.getElementById('rev-filter-year').value || '';
+  
+  const stdTargets = getStdTargets();
+  const revTargets = getRevTargets();
+  const students = getStudents();
+  
+  let filteredStdTargets = stdTargets;
+  let filteredRevTargets = revTargets;
+  
+  if (batch) {
+    filteredStdTargets = filteredStdTargets.filter(t => t.batch === batch);
+    filteredRevTargets = filteredRevTargets.filter(t => t.batch === batch);
+  }
+  if (month) {
+    filteredStdTargets = filteredStdTargets.filter(t => t.month === month);
+    filteredRevTargets = filteredRevTargets.filter(t => t.month === month);
+  }
+  
+  const display = document.getElementById('revenue-analytics-display');
+  
+  if (filteredStdTargets.length === 0 && filteredRevTargets.length === 0) {
+    display.innerHTML = '<p style="color:#888;padding:20px;text-align:center">No targets found for selected filters</p>';
+    return;
+  }
+  
+  let html = '<table style="width:100%;font-size:12px">';
+  html += '<thead><tr><th>Batch</th><th>Month</th><th style="text-align:right">Student Target</th><th style="text-align:right">Students Achieved</th><th style="text-align:right">Remaining Students</th><th style="text-align:right">Revenue Target</th><th style="text-align:right">Revenue Achieved</th><th style="text-align:right">Remaining Revenue</th><th style="text-align:right">Growth %</th></tr></thead><tbody>';
+  
+  const allBatches = [...new Set([...filteredStdTargets.map(t => t.batch), ...filteredRevTargets.map(t => t.batch)])];
+  
+  allBatches.forEach(b => {
+    const stdT = filteredStdTargets.filter(t => t.batch === b);
+    const revT = filteredRevTargets.filter(t => t.batch === b);
+    
+    const months = new Set([...stdT.map(t => t.month), ...revT.map(t => t.month)]);
+    
+    months.forEach(m => {
+      const stdTarget = stdT.find(t => t.month === m)?.target || 0;
+      const revTarget = revT.find(t => t.month === m)?.target || 0;
+      
+      const batchStudents = students.filter(s => s.batch === b && joinMonth(s) === m);
+      const stdAchieved = batchStudents.length;
+      const revAchieved = batchStudents.reduce((sum, s) => sum + Number(s.advance || 0), 0);
+      
+      const stdRemaining = stdTarget - stdAchieved;
+      const revRemaining = revTarget - revAchieved;
+      
+      const growth = revTarget > 0 ? Math.round((revAchieved / revTarget) * 100) : 0;
+      
+      html += `<tr>
+        <td>${b}</td>
+        <td>${m}</td>
+        <td style="text-align:right">${stdTarget}</td>
+        <td style="text-align:right;color:var(--color-success)">${stdAchieved}</td>
+        <td style="text-align:right;color:var(--color-danger)">${stdRemaining > 0 ? stdRemaining : 0}</td>
+        <td style="text-align:right">${fmt(revTarget)}</td>
+        <td style="text-align:right;color:var(--color-success)">${fmt(revAchieved)}</td>
+        <td style="text-align:right;color:var(--color-danger)">${fmt(Math.max(0, revRemaining))}</td>
+        <td style="text-align:right;font-weight:600">${growth}%</td>
+      </tr>`;
+    });
+  });
+  
+  html += '</tbody></table>';
+  display.innerHTML = html;
+}
+
+// ── STUDENT TARGET ─────────────────────────────
+function saveStudentTarget() {
+  const batch = document.getElementById('std-batch').value;
+  const month = document.getElementById('std-month').value;
+  const target = Number(document.getElementById('std-target').value || 0);
+  
+  if (!batch || !month || !target) {
+    alert('Please fill all fields');
+    return;
+  }
+  
+  let targets = getStdTargets();
+  const idx = targets.findIndex(t => t.batch === batch && t.month === month);
+  
+  if (idx >= 0) {
+    targets[idx].target = target;
+  } else {
+    targets.push({ batch, month, target });
+  }
+  
+  saveStdTargets(targets);
+  syncToSheet(REVENUE_SHEET_URL, { type: 'student_target', batch, month, target, timestamp: new Date().toISOString() });
+  clearStudentTargetInput();
+  renderStudentTargets();
+  updateMonthlySummary();
+  renderDashboard();
+}
+
+function clearStudentTargetInput() {
+  document.getElementById('std-batch').value = '';
+  document.getElementById('std-month').value = 'January';
+  document.getElementById('std-target').value = '';
+}
+
+function renderStudentTargets() {
+  const targets = getStdTargets();
+  const list = document.getElementById('student-targets-list');
+  
+  if (!targets.length) {
+    list.innerHTML = '<p style="color:#888;padding:10px;font-size:11px">No student targets set yet</p>';
+    return;
+  }
+  
+  list.innerHTML = targets.map((t, i) => `
+    <div style="padding:8px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;font-size:12px">
+      <div><strong>${t.batch}</strong> - ${t.month}: <span style="color:var(--color-primary);font-weight:700">${t.target}</span> students</div>
+      <button class="btn btn-danger btn-sm" onclick="deleteStudentTarget(${i})" title="Delete">✕</button>
+    </div>
+  `).join('');
+}
+
+function deleteStudentTarget(idx) {
+  let targets = getStdTargets();
+  targets.splice(idx, 1);
+  saveStdTargets(targets);
+  renderStudentTargets();
+  updateMonthlySummary();
+}
+
+// ── REVENUE TARGET ──────────────────────────────
+function saveRevenueTarget() {
+  const batch = document.getElementById('rev-batch2').value;
+  const month = document.getElementById('rev-month2').value;
+  const target = Number(document.getElementById('rev-target2').value || 0);
+  
+  if (!batch || !month || !target) {
+    alert('Please fill all fields');
+    return;
+  }
+  
+  let targets = getRevTargets();
+  const idx = targets.findIndex(t => t.batch === batch && t.month === month && !t.timing);
+  
+  if (idx >= 0) {
+    targets[idx].target = target;
+  } else {
+    targets.push({ batch, month, target, timing: null });
+  }
+  
+  saveRevTargets(targets);
+  syncToSheet(REVENUE_SHEET_URL, { type: 'revenue_target', batch, month, target, timestamp: new Date().toISOString() });
+  clearRevenueTargetInput();
+  renderRevenueTargets();
+  updateMonthlySummary();
+  renderDashboard();
+}
+
+function clearRevenueTargetInput() {
+  document.getElementById('rev-batch2').value = '';
+  document.getElementById('rev-month2').value = 'January';
+  document.getElementById('rev-target2').value = '';
+}
+
+function renderRevenueTargets() {
+  const targets = getRevTargets().filter(t => !t.timing);
+  const list = document.getElementById('revenue-targets-list');
+  
+  if (!targets.length) {
+    list.innerHTML = '<p style="color:#888;padding:10px;font-size:11px">No revenue targets set yet</p>';
+    return;
+  }
+  
+  list.innerHTML = targets.map((t, i) => `
+    <div style="padding:8px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;font-size:12px">
+      <div><strong>${t.batch}</strong> - ${t.month}: <span style="color:var(--color-primary);font-weight:700">${fmt(t.target)}</span></div>
+      <button class="btn btn-danger btn-sm" onclick="deleteRevenueTarget(${i})" title="Delete">✕</button>
+    </div>
+  `).join('');
+}
+
+function deleteRevenueTarget(idx) {
+  let targets = getRevTargets().filter(t => !t.timing);
+  targets.splice(idx, 1);
+  saveRevTargets([...getRevTargets().filter(t => t.timing), ...targets]);
+  renderRevenueTargets();
+  updateMonthlySummary();
+}
+
+// ── MONTHLY SUMMARY WITH AUTOMATIC ADJUSTMENTS ──
+function updateMonthlySummary() {
+  const batch = document.getElementById('summary-batch').value;
+  const tbody = document.getElementById('monthly-summary-body');
+  
+  let rows = '';
+  for (let month of MONTHS) {
+    const stdAdjustment = calculateAdjustedStudentTarget(batch || 'all', month);
+    const revAdjustment = calculateAdjustedRevenueTarget(batch || 'all', month);
+    
+    const batches = batch ? [batch] : [...new Set(getStudents().map(s => s.batch))];
+    let stdAchieved = 0;
+    let revAchieved = 0;
+    
+    batches.forEach(b => {
+      stdAchieved += getStudents().filter(s => s.batch === b && joinMonth(s) === month).length;
+      revAchieved += getStudents().filter(s => s.batch === b && joinMonth(s) === month).reduce((sum, s) => sum + Number(s.advance || 0), 0);
+    });
+    
+    const stdRemaining = stdAdjustment.target - stdAchieved;
+    const revRemaining = revAdjustment.target - revAchieved;
+    
+    // Student Target Display
+    let stdTargetDisplay = `<div style="font-weight:600">${stdAdjustment.target} students</div>`;
+    if (stdAdjustment.adjustment !== 0) {
+      const adjClass = stdAdjustment.adjustment > 0 ? 'adjustment-positive' : 'adjustment-negative';
+      const adjSign = stdAdjustment.adjustment > 0 ? '+' : '';
+      stdTargetDisplay += `<div class="${adjClass}" style="font-size:10px">${adjSign}${stdAdjustment.adjustment} students</div>`;
+    }
+    
+    // Revenue Target Display
+    let revTargetDisplay = `<div style="font-weight:600">${fmt(revAdjustment.target)}</div>`;
+    if (revAdjustment.adjustment !== 0) {
+      const adjClass = revAdjustment.adjustment > 0 ? 'adjustment-positive' : 'adjustment-negative';
+      const adjSign = revAdjustment.adjustment > 0 ? '+' : '';
+      revTargetDisplay += `<div class="${adjClass}" style="font-size:10px">${adjSign}${fmt(revAdjustment.adjustment)}</div>`;
+    }
+    
+    rows += `<tr>
+      <td style="font-weight:600">${month}</td>
+      <td style="text-align:right">${stdTargetDisplay}</td>
+      <td style="text-align:right;color:var(--color-success)">${stdAchieved}</td>
+      <td style="text-align:right;color:${stdRemaining > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${stdRemaining}</td>
+      <td style="text-align:right">${revTargetDisplay}</td>
+      <td style="text-align:right;color:var(--color-success)">${fmt(revAchieved)}</td>
+      <td style="text-align:right;color:${revRemaining > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${fmt(revRemaining)}</td>
+    </tr>`;
+  }
+  
+  tbody.innerHTML = rows;
+}
+
+// ── STUDENTS ────────────────────────────────────
+let editingStudentId = null;
+
+function initAddStudentForm() {
+  document.getElementById('form-title').textContent = editingStudentId ? 'Edit Student' : 'Add New Student';
+  if (!editingStudentId) {
+    ['f-name','f-mobile','f-email','f-fee','f-advance','f-service','f-other','f-notes','f-custom-duration']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('f-batch').value    = '';
+    document.getElementById('f-joindate').value = '';
+    document.getElementById('f-course').value   = '';
+    document.getElementById('f-duration').value = '';
+    document.getElementById('f-paymode').value = '';
+    document.getElementById('custom-duration-group').style.display = 'none';
+    updateStudentTiming();
+    switchFormTab(0, document.getElementById('tab-info'));
+  }
+  calcFeePreview();
+}
+
+function updateStudentTiming() {
+  const batch = document.getElementById('f-batch').value;
+  const sel   = document.getElementById('f-timing');
+  const slots = BATCH_TIMINGS[batch] || [];
+  sel.innerHTML = slots.length
+    ? '<option value="">Select Timing</option>' + slots.map(t => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">Select Batch First</option>';
+}
+
+function switchFormTab(idx, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('form-tab-' + idx).classList.add('active');
+}
+
+function handleDurationChange() {
+  const dur = document.getElementById('f-duration').value;
+  const customGroup = document.getElementById('custom-duration-group');
+  customGroup.style.display = dur === 'custom' ? 'flex' : 'none';
+}
+
+function checkInfoComplete() {
+  const name = document.getElementById('f-name').value.trim();
+  const mobile = document.getElementById('f-mobile').value.trim();
+  const batch = document.getElementById('f-batch').value;
+  const timing = document.getElementById('f-timing').value;
+  const course = document.getElementById('f-course').value;
+  const joindate = document.getElementById('f-joindate').value;
+  const duration = document.getElementById('f-duration').value;
+  
+  const complete = name && mobile && batch && timing && course && joindate && duration;
+  
+  document.getElementById('btn-next-receipt').disabled = !complete;
+  document.getElementById('tab-receipt').disabled = !complete;
+  document.getElementById('tab-receipt').style.opacity = complete ? '1' : '0.5';
+}
+
+function calcFeePreview() {
+  const fee     = Number(document.getElementById('f-fee').value     || 0);
+  const advance = Number(document.getElementById('f-advance').value || 0);
+  const service = Number(document.getElementById('f-service').value || 0);
+  const other   = Number(document.getElementById('f-other').value   || 0);
+  const balance = fee - advance;
+  const prev = document.getElementById('fee-preview');
+  if (prev) prev.innerHTML = `
+    <div style="text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--color-border)">
+      <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">Total Fee</div>
+      <div style="font-weight:700;font-size:15px">${fmt(fee)}</div>
+    </div>
+    <div style="text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--color-border)">
+      <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">Advance</div>
+      <div style="font-weight:700;font-size:15px;color:var(--color-success)">${fmt(advance)}</div>
+    </div>
+    <div style="text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--color-border)">
+      <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">Svc + Other</div>
+      <div style="font-weight:700;font-size:15px">${fmt(service + other)}</div>
+    </div>
+    <div style="text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--color-border)">
+      <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">Balance Due</div>
+      <div style="font-weight:700;font-size:15px;color:var(--color-danger)">${fmt(balance)}</div>
+    </div>
+  `;
+}
+
+function saveStudent() {
+  const name     = document.getElementById('f-name').value.trim();
+  const mobile   = document.getElementById('f-mobile').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const batch    = document.getElementById('f-batch').value;
+  const timing   = document.getElementById('f-timing').value;
+  const course   = document.getElementById('f-course').value;
+  const joindate = document.getElementById('f-joindate').value;
+  const fee      = Number(document.getElementById('f-fee').value     || 0);
+  const advance  = Number(document.getElementById('f-advance').value || 0);
+  const service  = Number(document.getElementById('f-service').value || 0);
+  const other    = Number(document.getElementById('f-other').value   || 0);
+  const paymode  = document.getElementById('f-paymode').value;
+  let duration   = document.getElementById('f-duration').value;
+  
+  if (duration === 'custom') {
+    duration = document.getElementById('f-custom-duration').value || 'Custom';
+  }
+  
+  const notes    = document.getElementById('f-notes').value.trim();
+
+  if (!name || !mobile || !batch || !timing || !course || !joindate || !fee) {
+    alert('Please fill all required fields.');
+    return;
+  }
+  if (!/^\d{10}$/.test(mobile)) { alert('Mobile must be exactly 10 digits.'); return; }
+
+  const students = getStudents();
+  const receipts = getReceipts();
+  const studentData = { name, mobile, email, batch, timing, course, joindate, fee, advance, service, other, paymode, duration, notes };
+
+  if (editingStudentId) {
+    const idx = students.findIndex(s => s.id === editingStudentId);
+    if (idx >= 0) students[idx] = { ...students[idx], ...studentData };
+    saveStudents(students);
+    syncToSheet(STUDENT_SHEET_URL, { type: 'student', action: 'update', studentId: editingStudentId, ...studentData, balance: fee - advance, timestamp: new Date().toISOString() });
+    editingStudentId = null;
+    alert('Student updated successfully!');
+  } else {
+    const id = genStudentId();
+    students.push({ id, ...studentData });
+    saveStudents(students);
+    const receiptNo = genReceiptNo();
+    receipts.push({ receiptNo, studentId: id, studentName: name, batch, timing, course, joindate, fee, advance, service, other, balance: fee - advance, paymode, notes, createdAt: new Date().toISOString() });
+    saveReceipts(receipts);
+    syncToSheet(STUDENT_SHEET_URL, { type: 'student', action: 'add', studentId: id, receiptNo, ...studentData, balance: fee - advance, timestamp: new Date().toISOString() });
+    alert('Student saved! Receipt No: ' + receiptNo + '\nStudent ID: ' + id);
+  }
+  showSection('students');
+  renderDashboard();
+}
+
+function payStatus(s) {
+  const fee = Number(s.fee || 0);
+  const adv = Number(s.advance || 0);
+  if (adv >= fee && fee > 0) return 'Paid';
+  if (adv > 0) return 'Partial';
+  return 'Due';
+}
+
+function renderStudents() {
+  let students = getStudents();
+  const search       = (document.getElementById('search-student')?.value || '').toLowerCase();
+  const filterBatch  = document.getElementById('filter-batch')?.value  || '';
+  const filterStatus = document.getElementById('filter-status')?.value || '';
+
+  const bf = document.getElementById('filter-batch');
+  if (bf) {
+    const batches = [...new Set(getStudents().map(s => s.batch))].filter(Boolean);
+    const cur = bf.value;
+    bf.innerHTML = '<option value="">All batches</option>' + batches.map(b => `<option value="${b}" ${b===cur?'selected':''}>${b}</option>`).join('');
+  }
+
+  if (filterBatch)  students = students.filter(s => s.batch === filterBatch);
+  if (filterStatus) students = students.filter(s => payStatus(s) === filterStatus);
+  if (search)       students = students.filter(s => s.name.toLowerCase().includes(search) || s.mobile.includes(search));
+
+  const cnt = document.getElementById('student-count');
+  if (cnt) cnt.textContent = students.length + ' student(s)';
+
+  const tbody = document.getElementById('students-body');
+  if (!tbody) return;
+
+  if (!students.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">No students found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = students.map((s, i) => {
+    const balance = Number(s.fee || 0) - Number(s.advance || 0);
+    const status  = payStatus(s);
+    const statusColors = { Paid:'#16a34a', Partial:'#d97706', Due:'#dc2626' };
+    return `<tr>
+      <td class="cb-col"><input type="checkbox" class="row-cb" data-id="${s.id}"></td>
+      <td>${i + 1}</td>
+      <td>
+        <div style="font-weight:500">${s.name}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)">${s.mobile}</div>
+      </td>
+      <td>
+        <div style="font-weight:500">${s.batch}</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">${s.timing || ''}</div>
+      </td>
+      <td>${s.course}</td>
+      <td style="text-align:right">${fmt(s.fee)}</td>
+      <td style="text-align:right;color:var(--color-success)">${fmt(s.advance)}</td>
+      <td style="text-align:right;color:var(--color-danger)">${fmt(balance)}</td>
+      <td><span style="color:${statusColors[status]};font-weight:700;font-size:11px">${status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="viewStudentReceipt('${s.id}')" title="View Receipt">👁 View Receipt</button>
+        <button class="btn btn-sm" onclick="editStudent('${s.id}')">✏ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bulk-bar').style.display = 'none';
+  document.querySelectorAll('.row-cb').forEach(cb => cb.addEventListener('change', updateBulkBar));
+}
+
+function viewStudentReceipt(studentId) {
+  const receipt = getReceipts().find(r => r.studentId === studentId);
+  if (!receipt) {
+    alert('No receipt found for this student');
+    return;
+  }
+  viewReceipt(receipt.receiptNo);
+}
+
+function editStudent(id) {
+  const s = getStudents().find(st => st.id === id);
+  if (!s) return;
+  editingStudentId = id;
+  showSection('add-student');
+  setTimeout(() => {
+    document.getElementById('f-name').value     = s.name     || '';
+    document.getElementById('f-mobile').value   = s.mobile   || '';
+    document.getElementById('f-email').value    = s.email    || '';
+    document.getElementById('f-batch').value    = s.batch    || '';
+    updateStudentTiming();
+    setTimeout(() => {
+      const t = document.getElementById('f-timing');
+      if (t) t.value = s.timing || '';
+    }, 50);
+    document.getElementById('f-course').value   = s.course   || '';
+    document.getElementById('f-joindate').value = s.joindate || '';
+    
+    if (s.duration && s.duration !== '1 Month' && s.duration !== '3 Months' && s.duration !== '6 Months' && s.duration !== '1 Year') {
+      document.getElementById('f-duration').value = 'custom';
+      document.getElementById('f-custom-duration').value = s.duration;
+      document.getElementById('custom-duration-group').style.display = 'flex';
+    } else {
+      document.getElementById('f-duration').value = s.duration || '';
+    }
+    
+    document.getElementById('f-paymode').value  = s.paymode  || 'Cash';
+    document.getElementById('f-fee').value      = s.fee      || '';
+    document.getElementById('f-advance').value  = s.advance  || '';
+    document.getElementById('f-service').value  = s.service  || '';
+    document.getElementById('f-other').value    = s.other    || '';
+    document.getElementById('f-notes').value    = s.notes    || '';
+    calcFeePreview();
+  }, 100);
+}
+
+function deleteStudent(id) {
+  if (!confirm('Delete this student? This cannot be undone.')) return;
+  saveStudents(getStudents().filter(s => s.id !== id));
+  renderStudents();
+  renderDashboard();
+  updateMonthlySummary();
+}
+
+function updateBulkBar() {
+  const selected = document.querySelectorAll('.row-cb:checked');
+  const bar = document.getElementById('bulk-bar');
+  bar.style.display = selected.length ? 'flex' : 'none';
+  document.getElementById('bulk-count').textContent = selected.length + ' selected';
+}
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.row-cb').forEach(cb => cb.checked = checked);
+  updateBulkBar();
+}
+function clearSelection() {
+  document.querySelectorAll('.row-cb').forEach(cb => cb.checked = false);
+  const hcb = document.getElementById('header-cb');
+  if (hcb) hcb.checked = false;
+  document.getElementById('bulk-bar').style.display = 'none';
+}
+function deleteSelected() {
+  const ids = [...document.querySelectorAll('.row-cb:checked')].map(cb => cb.dataset.id);
+  if (!ids.length || !confirm('Delete ' + ids.length + ' student(s)?')) return;
+  saveStudents(getStudents().filter(s => !ids.includes(s.id)));
+  renderStudents();
+  renderDashboard();
+  updateMonthlySummary();
+}
+function clearAllData() {
+  if (!confirm('This will permanently delete ALL students, receipts and targets. Are you sure?')) return;
+  localStorage.removeItem('sos_students');
+  localStorage.removeItem('sos_receipts');
+  localStorage.removeItem('sos_rev_targets');
+  localStorage.removeItem('sos_std_targets');
+  renderStudents();
+  renderDashboard();
+  updateMonthlySummary();
+}
+
+// ── RECEIPT VIEW ────────────────────────────────
+function viewReceipt(receiptNo) {
+  const receipt = getReceipts().find(r => r.receiptNo === receiptNo);
+  if (!receipt) return;
+  document.getElementById('rv-title').textContent = 'Receipt — ' + receiptNo;
+  const dateStr = receipt.joindate ? new Date(receipt.joindate).toLocaleDateString('en-IN') : '';
+  document.getElementById('receipt-print-area').innerHTML = `
+    <div style="padding:28px;max-width:580px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:22px;font-weight:700;color:#1e3a5f">SOS AI Techno Solutions</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px">AI Academy · Batch Receipt Management System</div>
+        <div style="border-top:2px solid #2563eb;margin:12px 0"></div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:2px;color:#2563eb">RECEIPT</div>
+      </div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:16px">
+        <tr><td style="padding:6px 0;color:#64748b;width:42%">Receipt No</td><td style="padding:6px 0;font-weight:700;color:#1e3a5f">${receipt.receiptNo}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Student Name</td><td style="padding:6px 0;font-weight:600">${receipt.studentName}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Student ID</td><td style="padding:6px 0;font-weight:600">${receipt.studentId || 'N/A'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Batch</td><td style="padding:6px 0">${receipt.batch}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Timing / Slot</td><td style="padding:6px 0">${receipt.timing || '—'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Course</td><td style="padding:6px 0">${receipt.course}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Join Date</td><td style="padding:6px 0">${dateStr}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Payment Mode</td><td style="padding:6px 0">${receipt.paymode || '—'}</td></tr>
+      </table>
+      <div style="border-top:1px dashed #cbd5e1;margin:12px 0"></div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <tr><td style="padding:6px 0;color:#64748b">Total Course Fee</td><td style="padding:6px 0;text-align:right;font-weight:600">${fmt(receipt.fee)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Advance Paid</td><td style="padding:6px 0;text-align:right;color:#16a34a;font-weight:700">${fmt(receipt.advance)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Service Charges</td><td style="padding:6px 0;text-align:right">${fmt(receipt.service)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Other Charges</td><td style="padding:6px 0;text-align:right">${fmt(receipt.other)}</td></tr>
+        <tr style="border-top:2px solid #1e3a5f">
+          <td style="padding:10px 0;font-weight:700;font-size:14px">Balance Due</td>
+          <td style="padding:10px 0;text-align:right;font-weight:700;font-size:16px;color:#dc2626">${fmt(receipt.balance)}</td>
+        </tr>
+      </table>
+      ${receipt.notes ? `<div style="margin-top:14px;padding:10px;background:#f8fafc;border-radius:6px;font-size:12px;color:#64748b"><strong>Notes:</strong> ${receipt.notes}</div>` : ''}
+      <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:12px;text-align:center;font-size:11px;color:#94a3b8">
+        Thank you for choosing SOS AI Techno Solutions · AI Academy
+      </div>
+    </div>`;
+  showSection('receipt-view');
+}
+
+function downloadReceiptPDF() {
+  const element = document.getElementById('receipt-print-area');
+  const opt = {
+    margin: 10,
+    filename: 'receipt.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+// ── BATCH MODAL ────────────────────────────────
+function openBatchModal(batch) {
+  const students = getStudents().filter(s => s.batch === batch);
+  const modal = document.getElementById('batchModal');
+  document.getElementById('batchModalTitle').textContent = batch + ' - Student Fee Details';
+  
+  const table = `<table style="width:100%;font-size:12px">
+    <thead><tr>
+      <th>Student Name</th>
+      <th>Phone</th>
+      <th style="text-align:right">Total Fee</th>
+      <th style="text-align:right">Paid Amount</th>
+      <th style="text-align:right">Remaining</th>
+    </tr></thead>
+    <tbody>
+      ${students.map(s => {
+        const balance = Number(s.fee || 0) - Number(s.advance || 0);
+        return `<tr>
+          <td>${s.name}</td>
+          <td>${s.mobile}</td>
+          <td style="text-align:right">${fmt(s.fee)}</td>
+          <td style="text-align:right;color:var(--color-success)">${fmt(s.advance)}</td>
+          <td style="text-align:right;color:var(--color-danger)">${fmt(balance)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+  
+  document.getElementById('batchModalBody').innerHTML = table;
+  modal.classList.add('show');
+}
+
+function closeBatchModal() {
+  document.getElementById('batchModal').classList.remove('show');
+}
+
+// ── INIT ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderDashboard();
+});
+</script>
+
+</body>
+</html>
