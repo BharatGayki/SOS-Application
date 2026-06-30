@@ -403,21 +403,44 @@ tr:hover td { background: #f8fafc; }
 <!-- ── DASHBOARD ── -->
 <div id="sec-dashboard" class="section active">
   <div class="stats" id="stats-grid"></div>
-  
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+
+  <!-- Row 1: Batch Overview + Summary (slightly reduced) -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     <div class="card">
       <div class="card-head"><span class="card-head-title">Batch Overview</span></div>
-      <div style="padding:14px;font-size:12px" id="batch-overview">Loading...</div>
+      <div style="padding:10px;font-size:11px" id="batch-overview">Loading...</div>
     </div>
     <div class="card">
       <div class="card-head"><span class="card-head-title">Summary</span></div>
-      <div style="padding:14px;font-size:12px" id="dashboard-summary">Loading...</div>
+      <div style="padding:10px;font-size:11px" id="dashboard-summary">Loading...</div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-head"><span class="card-head-title">Recent Receipts</span></div>
-    <div style="padding:10px" id="recent-receipts">Loading...</div>
+  <!-- Row 2: Monthly Revenue + Quarterly Revenue (NEW) -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Monthly Revenue</span></div>
+      <div style="padding:12px" id="monthly-rev-card">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Quarterly Revenue</span></div>
+      <div style="padding:12px" id="quarterly-rev-card">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Row 3: Recent Receipts + Revenue Collected (NEW) -->
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:10px">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Recent Receipts</span></div>
+      <div style="padding:8px" id="recent-receipts">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Revenue Collected</span>
+        <select id="rev-collected-month" onchange="renderRevenueCollected(this.value)" style="font-size:11px;padding:2px 4px;border-radius:4px;border:none"></select>
+      </div>
+      <div style="padding:12px" id="rev-collected-body">Loading...</div>
+    </div>
   </div>
 </div>
 
@@ -570,6 +593,8 @@ tr:hover td { background: #f8fafc; }
       <input type="text" id="search-student" placeholder="Search by name or mobile…" oninput="renderStudents()">
       <button class="btn btn-primary btn-sm" onclick="showSection('add-student')">+ Add Student</button>
       <button class="btn btn-warn btn-sm" onclick="clearAllData()">🗑 Clear All Data</button>
+      <button class="btn btn-primary btn-sm" onclick="exportData()">⬇ Export Backup</button>
+      <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0">⬆ Import Backup<input type="file" accept="application/json" onchange="importData(this)" style="display:none"></label>
       <span id="student-count" style="font-size:11px;color:var(--color-text-secondary);margin-left:auto"></span>
     </div>
     <div id="bulk-bar" class="bulk-bar" style="display:none">
@@ -766,7 +791,7 @@ function saveReceipts(arr)   { localStorage.setItem('sos_receipts', JSON.stringi
 // ── GOOGLE SHEETS SYNC (non-blocking — localStorage stays the source of truth) ──
 // Paste your deployed Web App URLs here:
 const STUDENT_SHEET_URL = "https://script.google.com/macros/s/AKfycbz9kyO77YaRIVBhBPDMyOnSiSn5Iclv419WltogjTixk6i2k2efrPYzh8lECKQVcHSy/exec";   // Sheet 1 — student information
-const REVENUE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxJhhd5a8q-Aq_4euqiUXGmcKxgg0j2VBOdc1FqOOx05RuxLsAooBvY0NRC-hpqQmYpog/exec";
+const REVENUE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxWqs9nDNzcmuEFzqWbAZ64PceMrI410G83YVQR3do-ANAyvXDDYwcdodOO8Cpjl9xXTQ/exec";
 // Fire-and-forget POST. Never blocks the UI, never breaks the app if offline/unconfigured.
 function syncToSheet(url, payload) {
   if (!url || url.indexOf('PASTE_') === 0) return;   // not configured yet → app works on localStorage only
@@ -778,6 +803,31 @@ function syncToSheet(url, payload) {
       body: JSON.stringify(payload)
     }).catch(function () { /* ignore network errors — local data already saved */ });
   } catch (e) { /* ignore */ }
+}
+
+// ── TARGET SHEET SNAPSHOT (targets + achieved, always consistent) ──
+function buildTargetSnapshot() {
+  const rev = getRevTargets().filter(t => !t.timing);
+  const std = getStdTargets();
+  const students = getStudents();
+  const batches = [...new Set([...rev.map(t => t.batch), ...std.map(t => t.batch), ...students.map(s => s.batch)])].filter(Boolean);
+  const rows = [];
+  batches.forEach(b => {
+    MONTHS.forEach(m => {
+      const revTarget = rev.filter(t => t.batch === b && t.month === m).reduce((s, t) => s + Number(t.target || 0), 0);
+      const stdTarget = std.filter(t => t.batch === b && t.month === m).reduce((s, t) => s + Number(t.target || 0), 0);
+      const inMonth = students.filter(s => s.batch === b && joinMonth(s) === m);
+      const revAchieved = inMonth.reduce((s, st) => s + Number(st.advance || 0), 0);
+      const stdAchieved = inMonth.length;
+      if (revTarget || stdTarget || revAchieved || stdAchieved) {
+        rows.push({ batch: b, month: m, revTarget, revAchieved, stdTarget, stdAchieved });
+      }
+    });
+  });
+  return rows;
+}
+function syncTargetSheet() {
+  syncToSheet(REVENUE_SHEET_URL, { type: 'snapshot', year: new Date().getFullYear(), rows: buildTargetSnapshot(), timestamp: new Date().toISOString() });
 }
 
 // ── HELPERS ──────────────────────────────────
@@ -943,6 +993,80 @@ function renderDashboard() {
     : '<p style="color:#888;padding:10px;text-align:center;font-size:11px">No receipts yet</p>';
   
   document.getElementById('recent-receipts').innerHTML = receiptsHTML;
+
+  renderRevenueCards();
+}
+
+// ── DASHBOARD REVENUE CARDS (Monthly / Quarterly / Collected) ──
+function currentMonthName() { return MONTHS[new Date().getMonth()]; }
+
+function monthRevenueTarget(month) {
+  return getRevTargets().filter(t => !t.timing && t.month === month)
+                        .reduce((s, t) => s + Number(t.target || 0), 0);
+}
+function monthRevenueAchieved(month) {
+  return getStudents().filter(s => joinMonth(s) === month)
+                      .reduce((s, st) => s + Number(st.advance || 0), 0);
+}
+function quarterMonths(month) {
+  const q = Math.floor(MONTHS.indexOf(month) / 3);
+  return MONTHS.slice(q * 3, q * 3 + 3);
+}
+function progressBar(pct) {
+  const c = pct >= 100 ? 'var(--color-success)' : pct >= 60 ? 'var(--color-primary)' : 'var(--color-warn)';
+  return `<div style="height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:6px"><div style="height:100%;background:${c};width:${Math.min(100, pct)}%"></div></div>`;
+}
+function revRow(label, value, color) {
+  return `<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--color-text-secondary)">${label}</span><strong style="${color ? 'color:' + color : ''}">${value}</strong></div>`;
+}
+
+function renderRevenueCards() {
+  // Monthly (current month)
+  const m = currentMonthName();
+  const year = new Date().getFullYear();
+  const mt = monthRevenueTarget(m), ma = monthRevenueAchieved(m);
+  const mr = mt - ma, mp = mt > 0 ? Math.round(ma / mt * 100) : 0;
+  document.getElementById('monthly-rev-card').innerHTML =
+    `<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">${m} ${year}</div>` +
+    revRow('Target', fmt(mt)) +
+    revRow('Achieved', fmt(ma), 'var(--color-success)') +
+    revRow('Remaining', fmt(mr), mr > 0 ? 'var(--color-danger)' : 'var(--color-success)') +
+    progressBar(mp) +
+    `<div style="font-size:11px;color:var(--color-text-secondary);margin-top:5px">${mp}% achieved · ${mr > 0 ? fmt(mr) + ' to go' : 'Target met 🎉'}</div>`;
+
+  // Quarterly (current quarter)
+  const qm = quarterMonths(m);
+  const qIdx = Math.floor(MONTHS.indexOf(m) / 3) + 1;
+  let qt = 0, qa = 0;
+  qm.forEach(mo => { qt += monthRevenueTarget(mo); qa += monthRevenueAchieved(mo); });
+  const qr = qt - qa, qp = qt > 0 ? Math.round(qa / qt * 100) : 0;
+  document.getElementById('quarterly-rev-card').innerHTML =
+    `<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">Q${qIdx} · ${qm[0].slice(0, 3)}–${qm[2].slice(0, 3)} ${year}</div>` +
+    revRow('Target', fmt(qt)) +
+    revRow('Achieved', fmt(qa), 'var(--color-success)') +
+    revRow('Remaining', fmt(qr), qr > 0 ? 'var(--color-danger)' : 'var(--color-success)') +
+    progressBar(qp) +
+    `<div style="font-size:11px;color:var(--color-text-secondary);margin-top:5px">${qp}% achieved this quarter</div>`;
+
+  // Revenue Collected (selected month — default current)
+  const sel = document.getElementById('rev-collected-month');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = MONTHS.map(mo => `<option value="${mo}">${mo}</option>`).join('');
+    sel.value = m;
+  }
+  renderRevenueCollected(sel ? sel.value : m);
+}
+
+function renderRevenueCollected(month) {
+  const t = monthRevenueTarget(month), a = monthRevenueAchieved(month);
+  const r = t - a, p = t > 0 ? Math.round(a / t * 100) : 0;
+  document.getElementById('rev-collected-body').innerHTML =
+    revRow('Collected', fmt(a), 'var(--color-success)') +
+    revRow('Target', fmt(t)) +
+    revRow('Remaining', fmt(r), r > 0 ? 'var(--color-danger)' : 'var(--color-success)') +
+    progressBar(p) +
+    `<div style="text-align:center;font-size:20px;font-weight:700;margin-top:8px;color:var(--color-primary)">${p}%</div>` +
+    `<div style="text-align:center;font-size:11px;color:var(--color-text-secondary)">completed for ${month}</div>`;
 }
 
 // ── REVENUE TRACKER (ANALYTICS ONLY) ────────────
@@ -1037,7 +1161,7 @@ function saveStudentTarget() {
   }
   
   saveStdTargets(targets);
-  syncToSheet(REVENUE_SHEET_URL, { type: 'student_target', batch, month, target, timestamp: new Date().toISOString() });
+  syncTargetSheet();
   clearStudentTargetInput();
   renderStudentTargets();
   updateMonthlySummary();
@@ -1096,7 +1220,7 @@ function saveRevenueTarget() {
   }
   
   saveRevTargets(targets);
-  syncToSheet(REVENUE_SHEET_URL, { type: 'revenue_target', batch, month, target, timestamp: new Date().toISOString() });
+  syncTargetSheet();
   clearRevenueTargetInput();
   renderRevenueTargets();
   updateMonthlySummary();
@@ -1321,6 +1445,7 @@ function saveStudent() {
   }
   showSection('students');
   renderDashboard();
+  syncTargetSheet();
 }
 
 function payStatus(s) {
@@ -1442,6 +1567,7 @@ function deleteStudent(id) {
   renderStudents();
   renderDashboard();
   updateMonthlySummary();
+  syncTargetSheet();
 }
 
 function updateBulkBar() {
@@ -1467,6 +1593,7 @@ function deleteSelected() {
   renderStudents();
   renderDashboard();
   updateMonthlySummary();
+  syncTargetSheet();
 }
 function clearAllData() {
   if (!confirm('This will permanently delete ALL students, receipts and targets. Are you sure?')) return;
@@ -1477,6 +1604,45 @@ function clearAllData() {
   renderStudents();
   renderDashboard();
   updateMonthlySummary();
+}
+
+// ── BACKUP: EXPORT / IMPORT (origin-safe, non-destructive) ──
+function exportData() {
+  const data = {
+    sos_students:    getStudents(),
+    sos_receipts:    getReceipts(),
+    sos_rev_targets: getRevTargets(),
+    sos_std_targets: getStdTargets(),
+    _exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sos-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('Restore this backup? It will REPLACE the data currently in this browser.')) { input.value = ''; return; }
+      if (data.sos_students)    localStorage.setItem('sos_students',    JSON.stringify(data.sos_students));
+      if (data.sos_receipts)    localStorage.setItem('sos_receipts',    JSON.stringify(data.sos_receipts));
+      if (data.sos_rev_targets) localStorage.setItem('sos_rev_targets', JSON.stringify(data.sos_rev_targets));
+      if (data.sos_std_targets) localStorage.setItem('sos_std_targets', JSON.stringify(data.sos_std_targets));
+      alert('Backup restored successfully!');
+      renderStudents(); renderDashboard(); updateMonthlySummary();
+    } catch (err) {
+      alert('Invalid backup file.');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ── RECEIPT VIEW ────────────────────────────────
